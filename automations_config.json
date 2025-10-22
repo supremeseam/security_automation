@@ -1,0 +1,106 @@
+{
+  "automations": [
+    {
+      "id": "file_organizer",
+      "name": "File Organizer",
+      "description": "Organizes files in a directory by file type",
+      "script": "scripts/file_organizer.py",
+      "parameters": [
+        {
+          "name": "source_folder",
+          "label": "Source Folder",
+          "type": "text",
+          "required": true,
+          "placeholder": "C:\\Users\\Documents"
+        },
+        {
+          "name": "organize_by",
+          "label": "Organize By",
+          "type": "select",
+          "required": true,
+          "options": ["extension", "date", "size"],
+          "default": "extension"
+        }
+      ]
+    },
+    {
+      "id": "email_sender",
+      "name": "Bulk Email Sender",
+      "description": "Sends emails to multiple recipients",
+      "script": "scripts/email_sender.py",
+      "parameters": [
+        {
+          "name": "recipients",
+          "label": "Recipients (comma-separated)",
+          "type": "text",
+          "required": true,
+          "placeholder": "email1@example.com, email2@example.com"
+        },
+        {
+          "name": "subject",
+          "label": "Email Subject",
+          "type": "text",
+          "required": true,
+          "placeholder": "Your subject here"
+        },
+        {
+          "name": "message",
+          "label": "Email Message",
+          "type": "textarea",
+          "required": true,
+          "placeholder": "Your message here..."
+        }
+      ]
+    },
+    {
+      "id": "data_backup",
+      "name": "Data Backup",
+      "description": "Backs up files to a specified location",
+      "script": "scripts/data_backup.py",
+      "parameters": [
+        {
+          "name": "source",
+          "label": "Source Path",
+          "type": "text",
+          "required": true,
+          "placeholder": "C:\\Users\\Documents"
+        },
+        {
+          "name": "destination",
+          "label": "Backup Destination",
+          "type": "text",
+          "required": true,
+          "placeholder": "D:\\Backups"
+        },
+        {
+          "name": "compress",
+          "label": "Compress Backup",
+          "type": "checkbox",
+          "required": false,
+          "default": true
+        }
+      ]
+    },
+    {
+      "id": "user_offboarding",
+      "name": "User Offboarding",
+      "description": "Removes user from security tools and systems",
+      "script": "scripts/offboard.py",
+      "parameters": [
+        {
+          "name": "email",
+          "label": "Email",
+          "type": "text",
+          "required": true
+        },
+        {
+          "name": "fanged",
+          "label": "Enabled",
+          "type": "checkbox",
+          "required": false,
+          "default": true
+        }
+      ]
+    }
+  ]
+}

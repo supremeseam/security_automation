@@ -1,0 +1,14 @@
+[2025-10-21T14:30:01] INFO: Successful login for user 'alice' from IP: 192.168.1.1
+[2025-10-21T14:30:02] INFO: User 'bob' accessed /api/data.
+[2025-10-21T14:30:03] WARN: Failed login attempt for user 'admin' from IP: 172.16.30.2
+[2025-10-21T14:30:04] INFO: User 'alice' loaded dashboard.
+[2025-10-21T14:30:05] ERROR: Connection to payment gateway timed out for user 'bob'. Source: 10.4.5.6
+[2025-10-21T14:30:06] INFO: New connection from ::1 (localhost)
+[2025-10-21T14:30:07] INFO: Successful login for user 'charlie' from IP: 2001:0db8:85a3:0000:0000:8a2e:0370:7334
+[2025-10-21T14:30:08] WARN: High latency detected for 198.51.100.22 during health check.
+[2025-10-21T14:30:09] INFO: User 'dave' created report.
+[2025-10-21T14:30:10] WARN: Failed login attempt for user 'eve' from IP: 172.16.30.2
+[2025-10-21T14:30:11] ERROR: Service 'user-auth' unavailable.
+[2025-10-21T14:30:12] INFO: API request to /api/users from 10.4.5.6
+[2025-10-21T14:30:13] WARN: Detected potential brute-force from 203.0.113.10
+[2025-10-21T14:30:14] INFO: Connection from 2001:db8:a0b:12f0::1
