@@ -75,10 +75,19 @@ DB_PASSWORD=$${DB_PASSWORD}
 SECRET_KEY=$${SECRET_KEY}
 EOF
 
-# Install Python and Node.js dependencies
-pip3 install -r requirements.txt
-npm install
-npm run build
+# Change ownership of app directory first so ec2-user can install packages
+chown -R ec2-user:ec2-user $APP_DIR
+
+# Install Python and Node.js dependencies as ec2-user
+echo "Installing Python dependencies..."
+sudo -u ec2-user pip3 install --user -r requirements.txt
+echo "Checking if gunicorn was installed..."
+ls -la /home/ec2-user/.local/bin/ || echo "Directory does not exist"
+sudo -u ec2-user pip3 show gunicorn
+
+echo "Installing Node.js dependencies..."
+sudo -u ec2-user npm install
+sudo -u ec2-user npm run build
 
 # Wait for DB to be ready and run setup script
 echo "Waiting for database to become available..."
@@ -89,7 +98,7 @@ done
 echo "Database is up. Running setup script."
 mysql -h $DB_HOST -u $DB_USER -p$DB_PASSWORD $DB_NAME < database_setup.sql
 
-# Create a systemd service to run the Flask app
+# Create a systemd service to run the Flask app with Gunicorn
 cat > /etc/systemd/system/automation-ui.service << EOF
 [Unit]
 Description=Python Automation UI Service
@@ -100,17 +109,38 @@ User=ec2-user
 Group=ec2-user
 EnvironmentFile=$${APP_DIR}/app/.env
 WorkingDirectory=$${APP_DIR}/app
-ExecStart=/usr/bin/python3 $${APP_DIR}/app/app.py
+Environment="PATH=/home/ec2-user/.local/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="PYTHONPATH=/home/ec2-user/.local/lib/python3.9/site-packages"
+ExecStart=/usr/bin/python3 -m gunicorn --workers 3 --bind 0.0.0.0:5000 --timeout 120 --access-logfile - --error-logfile - app:app
 Restart=always
+RestartSec=10
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
 EOF
 
-# Change ownership of the app directory to the user that will run the service
-chown -R ec2-user:ec2-user $${APP_DIR}
-
 # Start and enable the service
 systemctl daemon-reload
-systemctl start automation-ui.service
 systemctl enable automation-ui.service
+systemctl start automation-ui.service
+
+# Wait a moment and check if service started successfully
+sleep 5
+if systemctl is-active --quiet automation-ui.service; then
+    echo "SUCCESS: Automation UI service is running"
+    systemctl status automation-ui.service --no-pager
+else
+    echo "ERROR: Automation UI service failed to start"
+    journalctl -u automation-ui.service -n 50 --no-pager
+    exit 1
+fi
+
+echo "Deployment complete! Access the application at http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):5000"
