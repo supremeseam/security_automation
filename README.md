@@ -31,9 +31,7 @@ security_automation/
 │       └── automations_config.json
 │
 ├── docs/              # Documentation
-│   ├── README.md      # Detailed project documentation
-│   ├── SETUP_MYSQL.md # MySQL setup guide
-│   └── DEPLOYMENT_ISSUES_FIXED.md
+│   └── SETUP_MYSQL.md
 │
 ├── .env.example       # Example environment variables
 └── .gitignore         # Git ignore rules
