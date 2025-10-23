@@ -120,10 +120,8 @@ sudo cat /var/log/user-data.log
 ## Documentation
 
 See [docs/](docs/) directory for detailed documentation:
-- [Full README](docs/README.md) - Comprehensive project documentation
 - [MySQL Setup Guide](docs/SETUP_MYSQL.md) - Database configuration
-- [Deployment Issues](docs/DEPLOYMENT_ISSUES_FIXED.md) - Troubleshooting guide
 
 ## License
 
-[Your License Here]
+MIT
