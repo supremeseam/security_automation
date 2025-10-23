@@ -1,0 +1,13 @@
+# Copy this file to terraform.tfvars and fill in your values
+
+# REQUIRED: Your Git repository URL containing the application code
+git_repo_url = "https://github.com/your-username/your-repo-name.git"
+
+# REQUIRED: Your EC2 key pair name for SSH access (create one in AWS EC2 console first)
+key_name = "your-key-pair-name"
+
+# Optional: Override default values
+# aws_region = "us-east-1"
+# project_name = "py-auto-ui"
+# instance_type = "t2.micro"
+# db_instance_class = "db.t3.micro"
