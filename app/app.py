@@ -198,12 +198,18 @@ def run_automation():
                 'Unknown', params if 'params' in locals() else {}, False, str(e), exec_time)
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    for d in ['scripts', 'templates', 'static/js', 'static/css']:
-        os.makedirs(d, exist_ok=True)
+# Create necessary directories on startup
+for d in ['scripts', 'templates', 'static/js', 'static/css', 'log']:
+    os.makedirs(d, exist_ok=True)
 
+if __name__ == '__main__':
+    # This block only runs when using python app.py directly (development)
     print(f"\nAutomation UI running on http://localhost:5000")
     print(f"DB: {DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}")
     print(f"Login: admin/admin123 or user/password\n")
 
+    # Development mode only
     app.run(debug=True, host='0.0.0.0', port=5000)
+else:
+    # Production mode (when run via Gunicorn)
+    print(f"Production mode: DB={DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}")
