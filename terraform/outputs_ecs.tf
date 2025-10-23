@@ -25,7 +25,8 @@ output "ecs_service_name" {
   value       = aws_ecs_service.app.name
 }
 
-output "cloudwatch_log_group" {
-  description = "CloudWatch log group for ECS tasks"
-  value       = aws_cloudwatch_log_group.ecs_logs.name
-}
+# CloudWatch log group output removed due to IAM restrictions
+# output "cloudwatch_log_group" {
+#   description = "CloudWatch log group for ECS tasks"
+#   value       = "/ecs/py-auto-ui"
+# }

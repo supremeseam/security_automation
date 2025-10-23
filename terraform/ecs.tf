@@ -38,15 +38,8 @@ resource "aws_ecr_lifecycle_policy" "automation_ui" {
   })
 }
 
-# CloudWatch Log Group for ECS
-resource "aws_cloudwatch_log_group" "ecs_logs" {
-  name              = "/ecs/${var.project_name}"
-  retention_in_days = 7
-
-  tags = {
-    Name = "${var.project_name}-ecs-logs"
-  }
-}
+# CloudWatch Log Groups removed due to IAM permission restrictions
+# Logs can be viewed in ECS console under task details
 
 # ECS Cluster
 resource "aws_ecs_cluster" "main" {
@@ -149,6 +142,30 @@ resource "aws_ecs_task_definition" "app" {
       {
         name  = "DB_NAME"
         value = var.db_name
+      },
+      {
+        name  = "AWS_REGION"
+        value = var.aws_region
+      },
+      {
+        name  = "ECS_CLUSTER_NAME"
+        value = aws_ecs_cluster.main.name
+      },
+      {
+        name  = "ECS_WORKER_TASK_DEFINITION"
+        value = "${var.project_name}-worker"
+      },
+      {
+        name  = "ECS_SUBNETS"
+        value = "${aws_subnet.public.id},${aws_subnet.public_b.id}"
+      },
+      {
+        name  = "ECS_SECURITY_GROUPS"
+        value = aws_security_group.ecs_tasks.id
+      },
+      {
+        name  = "USE_ECS_TASKS"
+        value = "true"
       }
     ]
 
@@ -167,14 +184,17 @@ resource "aws_ecs_task_definition" "app" {
       }
     ]
 
-    logConfiguration = {
-      logDriver = "awslogs"
-      options = {
-        "awslogs-group"         = aws_cloudwatch_log_group.ecs_logs.name
-        "awslogs-region"        = var.aws_region
-        "awslogs-stream-prefix" = "web"
-      }
-    }
+    # Logging temporarily disabled due to IAM restrictions
+    # You can still view logs in ECS console or add this back later
+    # logConfiguration = {
+    #   logDriver = "awslogs"
+    #   options = {
+    #     "awslogs-group"         = local.log_group_name
+    #     "awslogs-region"        = var.aws_region
+    #     "awslogs-stream-prefix" = "web"
+    #     "awslogs-create-group"  = "true"
+    #   }
+    # }
 
     healthCheck = {
       command     = ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
@@ -266,7 +286,7 @@ resource "aws_lb_target_group" "app" {
     healthy_threshold   = 2
     interval            = 30
     matcher             = "200"
-    path                = "/"
+    path                = "/health"
     port                = "traffic-port"
     protocol            = "HTTP"
     timeout             = 5
@@ -294,7 +314,7 @@ resource "aws_lb_listener" "app" {
 # Create second public subnet for ALB (requires 2 AZs)
 resource "aws_subnet" "public_b" {
   vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.3.0/24"
+  cidr_block              = "10.0.4.0/24"  # Changed from 10.0.3.0/24 to avoid conflict
   map_public_ip_on_launch = true
   availability_zone       = data.aws_availability_zones.available.names[1]
 

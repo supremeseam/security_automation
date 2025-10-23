@@ -4,14 +4,16 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 import mysql.connector
 import bcrypt
 import json
-import subprocess
 import os
-import sys
 from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
+from task_runner import get_task_runner
 
 load_dotenv()
+
+# Initialize task runner (ECS or subprocess based on environment)
+task_runner = get_task_runner()
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
@@ -102,6 +104,11 @@ def log_run(user_id, auto_id, auto_name, params, success, output, exec_time):
     except Exception as e:
         print(f"Logging failed: {e}")
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for ALB"""
+    return jsonify({'status': 'healthy'}), 200
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
@@ -147,6 +154,7 @@ def get_automations():
 @app.route('/api/run', methods=['POST'])
 @login_required
 def run_automation():
+    """Run automation script in isolated container (ECS) or subprocess (local dev)"""
     start = datetime.now()
     try:
         data = request.json
@@ -159,43 +167,70 @@ def run_automation():
         if not automation:
             return jsonify({'error': 'Automation not found'}), 404
 
-        script = Path(__file__).parent / automation['script']
-        if not script.exists():
-            return jsonify({'error': f'Script not found'}), 404
+        # Launch script in isolated container
+        result = task_runner.run_script(
+            script_path=automation['script'],
+            parameters=params,
+            automation_id=auto_id,
+            user_id=current_user.id
+        )
 
-        cmd = [sys.executable, str(script)]
+        if not result.get('success'):
+            # Task failed to launch
+            exec_time = (datetime.now() - start).total_seconds()
+            log_run(current_user.id, auto_id, automation['name'], params,
+                    False, result.get('error', 'Unknown error'), exec_time)
+            return jsonify(result), 500
 
-        for param in automation['parameters']:
-            val = params.get(param['name'])
-            if val is not None:
-                if param['type'] == 'checkbox':
-                    if val:
-                        cmd.append(f'--{param["name"]}')
-                else:
-                    cmd.extend([f'--{param["name"]}', str(val)])
+        # For ECS tasks, return immediately with task info
+        # Client can poll for status
+        if 'task_arn' in result:
+            return jsonify({
+                'success': True,
+                'message': 'Script execution started in isolated container',
+                'task_arn': result['task_arn'],
+                'status': result['status'],
+                'execution_mode': 'ecs'
+            })
+        else:
+            # Subprocess mode (local dev) - returns immediately with result
+            exec_time = (datetime.now() - start).total_seconds()
+            log_run(current_user.id, auto_id, automation['name'], params,
+                    result.get('success', False),
+                    result.get('stdout', '') or result.get('stderr', ''),
+                    exec_time)
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
-        exec_time = (datetime.now() - start).total_seconds()
+            return jsonify({
+                'success': result.get('success', False),
+                'stdout': result.get('stdout'),
+                'stderr': result.get('stderr'),
+                'execution_mode': 'subprocess'
+            })
 
-        log_run(current_user.id, auto_id, automation['name'], params,
-                result.returncode == 0, result.stdout or result.stderr, exec_time)
-
-        return jsonify({
-            'success': result.returncode == 0,
-            'returncode': result.returncode,
-            'stdout': result.stdout,
-            'stderr': result.stderr
-        })
-
-    except subprocess.TimeoutExpired:
-        exec_time = (datetime.now() - start).total_seconds()
-        log_run(current_user.id, auto_id, automation.get('name', 'Unknown'),
-                params, False, 'Timeout', exec_time)
-        return jsonify({'error': 'Script timed out (5 min)'}), 408
     except Exception as e:
         exec_time = (datetime.now() - start).total_seconds()
         log_run(current_user.id, auto_id if 'auto_id' in locals() else 'unknown',
                 'Unknown', params if 'params' in locals() else {}, False, str(e), exec_time)
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/task/<path:task_arn>/status', methods=['GET'])
+@login_required
+def get_task_status(task_arn):
+    """Get status of a running ECS task"""
+    try:
+        status = task_runner.get_task_status(task_arn)
+        return jsonify(status)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/task/<path:task_arn>/stop', methods=['POST'])
+@login_required
+def stop_task(task_arn):
+    """Stop a running ECS task"""
+    try:
+        result = task_runner.stop_task(task_arn, reason='Stopped by user')
+        return jsonify(result)
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
