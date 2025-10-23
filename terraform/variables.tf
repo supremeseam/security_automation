@@ -63,3 +63,19 @@ variable "git_repo_url" {
   type        = string
   default     = "https://github.com/your-username/your-repo-name.git" # <-- IMPORTANT: CHANGE THIS
 }
+
+variable "environment" {
+  description = "Environment name (dev, staging, prod)"
+  type        = string
+  default     = "prod"
+  validation {
+    condition     = contains(["dev", "staging", "prod"], var.environment)
+    error_message = "Environment must be dev, staging, or prod."
+  }
+}
+
+variable "docker_image_tag" {
+  description = "Docker image tag to deploy (e.g., 'latest', 'dev', 'v1.0.0', git commit SHA)"
+  type        = string
+  default     = "latest"
+}
