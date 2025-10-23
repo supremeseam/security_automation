@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- admin/admin123 and user/password
 INSERT INTO users (username, password_hash, email, full_name) VALUES
-('admin', '$2b$12$G7eB4Hf6bt/Jv0FyPNqDIOC/uMJ/JxCyogGXZgiaG3o6UAAzBBeQ.', 'admin@example.com', 'Administrator'),
+('admin', '$2a$12$MKHU1ArAxENfkwk9hi7.Ze5O5N4MB5xRztjd6Z0b.nHrP8Ghu0gPa', 'admin@example.com', 'Administrator'),
 ('user', '$2b$12$LWfd.SaZG.n9aHpgJ8sxKeAT1oXGToLGP2IzJ91Y.er8CjIDKSi9i', 'user@example.com', 'Standard User');
 
 CREATE TABLE IF NOT EXISTS automation_logs (
