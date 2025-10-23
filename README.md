@@ -50,7 +50,7 @@ security_automation/
 
 1. **Clone this repository**
    ```bash
-   git clone <your-repo-url>
+   git clone https://github.com/supremeseam/security_automation.git
    cd security_automation
    ```
 
