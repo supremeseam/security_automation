@@ -82,7 +82,7 @@ def verify_user(username, password):
     return None
 
 def load_config():
-    with open(Path(__file__).parent / 'automations_config.json') as f:
+    with open(Path(__file__).parent / 'config' / 'automations_config.json') as f:
         return json.load(f)
 
 def log_run(user_id, auto_id, auto_name, params, success, output, exec_time):
