@@ -69,7 +69,7 @@ variable "environment" {
   type        = string
   default     = "prod"
   validation {
-    condition     = contains(["dev", "staging", "prod"], var.environment)
+    condition     = contains(["dev", "staging", "prod", "ecs-cognito"], var.environment)
     error_message = "Environment must be dev, staging, or prod."
   }
 }
