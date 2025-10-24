@@ -75,7 +75,7 @@ This creates:
 cd c:\Users\kbigler\OneDrive - Cast & Crew\Desktop\security_automation
 
 # Run the build script
-.\build-and-push.ps1 -AwsRegion us-east-1
+.\scripts\build-and-push.ps1 -AwsRegion us-east-1
 ```
 
 ### Option B: Using Bash (Linux/Mac/WSL)
@@ -84,10 +84,10 @@ cd c:\Users\kbigler\OneDrive - Cast & Crew\Desktop\security_automation
 cd /path/to/security_automation
 
 # Make script executable
-chmod +x build-and-push.sh
+chmod +x scripts/build-and-push.sh
 
 # Run the build script
-./build-and-push.sh us-east-1
+./scripts/build-and-push.sh us-east-1
 ```
 
 ### Option C: Manual Steps
@@ -158,7 +158,7 @@ git commit -m "Update application"
 git push
 
 # 2. Rebuild and push image
-.\build-and-push.ps1
+.\scripts\build-and-push.ps1
 
 # 3. Force new deployment
 aws ecs update-service \

@@ -15,12 +15,12 @@ I've created a complete ECS deployment for your application. Here's everything y
 ### Docker Files
 - **`app/Dockerfile`** - Production-ready multi-stage build
 - **`app/.dockerignore`** - Optimizes Docker build
-- **`docker-compose.yml`** - For local testing
+- **`docker/docker-compose.yml`** - For local testing
 - **`.env.docker`** - Environment template
 
 ### Build & Deploy Scripts
-- **`build-and-push.ps1`** - Windows PowerShell script to build and push to ECR
-- **`build-and-push.sh`** - Linux/Mac bash script to build and push to ECR
+- **`scripts/build-and-push.ps1`** - Windows PowerShell script to build and push to ECR
+- **`scripts/build-and-push.sh`** - Linux/Mac bash script to build and push to ECR
 
 ### Documentation
 - **`ECS_QUICK_START.md`** - 5-minute quick start guide
@@ -39,7 +39,7 @@ cd "c:\Users\kbigler\OneDrive - Cast & Crew\Desktop\security_automation"
 copy .env.docker .env
 
 # 2. Start with Docker Compose
-docker-compose up -d
+docker-compose -f docker/docker-compose.yml up -d
 
 # 3. Open browser
 # http://localhost:5000
@@ -55,7 +55,7 @@ terraform apply
 
 # 2. Build and push Docker image
 cd ..
-.\build-and-push.ps1
+.\scripts\build-and-push.ps1
 
 # 3. Wait ~3 minutes for deployment
 # Then access via the ALB URL from Terraform outputs
@@ -133,7 +133,7 @@ cd ..
 
 ### Deploy Code Update
 ```bash
-.\build-and-push.ps1
+.\scripts\build-and-push.ps1
 aws ecs update-service --cluster py-auto-ui-cluster --service py-auto-ui-service --force-new-deployment --region us-east-1
 ```
 

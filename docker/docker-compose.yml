@@ -15,7 +15,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ./app/database_setup.sql:/docker-entrypoint-initdb.d/database_setup.sql
+      - ../app/database_setup.sql:/docker-entrypoint-initdb.d/database_setup.sql
     networks:
       - automation-network
     healthcheck:
@@ -27,7 +27,7 @@ services:
   # Flask Web Application
   web:
     build:
-      context: ./app
+      context: ../app
       dockerfile: Dockerfile
     container_name: automation-web
     restart: unless-stopped
@@ -47,7 +47,7 @@ services:
       - automation-network
     volumes:
       # Mount for development (optional - comment out for production)
-      - ./app:/app
+      - ../app:/app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/"]
       interval: 30s

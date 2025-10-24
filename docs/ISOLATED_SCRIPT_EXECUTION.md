@@ -226,7 +226,7 @@ This creates:
 ### 3. Rebuild and Deploy Docker Image
 
 ```powershell
-.\build-and-push.ps1
+.\scripts\build-and-push.ps1
 ```
 
 ### 4. Force New Deployment

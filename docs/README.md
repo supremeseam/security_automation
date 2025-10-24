@@ -7,20 +7,25 @@ AWS infrastructure for deploying a Python-based automation UI application with M
 ```
 security_automation/
 ├── terraform/          # Infrastructure as Code
-│   ├── main.tf        # Main Terraform configuration
+│   ├── main.tf        # Main Terraform configuration (EC2 deployment)
+│   ├── ecs.tf         # ECS deployment configuration
+│   ├── ecs_worker.tf  # ECS worker tasks for isolated scripts
 │   ├── variables.tf   # Variable definitions
-│   ├── outputs.tf     # Output definitions
+│   ├── outputs.tf     # EC2 outputs
+│   ├── outputs_ecs.tf # ECS outputs
 │   ├── user_data.sh   # EC2 initialization script
-│   ├── terraform.tfvars.example  # Example variables file
-│   └── create-key-pair.sh        # SSH key generation script
+│   └── terraform.tfvars.example  # Example variables file
 │
 ├── app/               # Application code
 │   ├── app.py         # Main Flask application
-│   ├── app.ts         # TypeScript frontend
+│   ├── task_runner.py # ECS task runner for isolated execution
+│   ├── Dockerfile     # Production Docker build
+│   ├── .dockerignore  # Docker build optimization
 │   ├── requirements.txt   # Python dependencies
 │   ├── package.json       # Node.js dependencies
 │   ├── tsconfig.json      # TypeScript configuration
 │   ├── database_setup.sql # Database schema
+│   ├── src/               # TypeScript source
 │   ├── scripts/           # Automation scripts
 │   │   ├── data_backup.py
 │   │   ├── email_sender.py
@@ -30,12 +35,25 @@ security_automation/
 │   └── config/            # Application configuration
 │       └── automations_config.json
 │
+├── scripts/           # Build and deployment scripts
+│   ├── build-and-push.ps1  # Windows Docker build script
+│   └── build-and-push.sh   # Linux/Mac Docker build script
+│
+├── docker/            # Docker configuration
+│   └── docker-compose.yml  # Local development setup
+│
 ├── docs/              # Documentation
-│   ├── README.md      # Detailed project documentation
-│   ├── SETUP_MYSQL.md # MySQL setup guide
-│   └── DEPLOYMENT_ISSUES_FIXED.md
+│   ├── README.md                      # Detailed project documentation
+│   ├── README_ECS.md                  # ECS deployment overview
+│   ├── ECS_QUICK_START.md            # Quick start guide
+│   ├── ECS_DEPLOYMENT.md             # Complete deployment docs
+│   ├── DOCKER_DEPLOYMENT.md          # Docker reference
+│   ├── BRANCH_DEPLOYMENTS.md         # Branch-based deployments
+│   ├── ISOLATED_SCRIPT_EXECUTION.md  # Isolated container execution
+│   └── SETUP_MYSQL.md                # MySQL setup guide
 │
 ├── .env.example       # Example environment variables
+├── .env.docker        # Docker environment template
 └── .gitignore         # Git ignore rules
 ```
 

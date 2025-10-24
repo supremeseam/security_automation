@@ -12,7 +12,7 @@ Deploy different git branches (dev, staging, prod) to ECS with proper image tagg
 git checkout dev
 
 # Build and push
-.\build-and-push.ps1 -GitBranch dev
+.\scripts\build-and-push.ps1 -GitBranch dev
 
 # Deploy to ECS
 cd terraform
@@ -25,7 +25,7 @@ terraform apply -var="docker_image_tag=dev" -var="environment=dev"
 git checkout dev
 
 # Build and push
-./build-and-push.sh us-east-1 "" dev
+./scripts/build-and-push.sh us-east-1 "" dev
 
 # Deploy to ECS
 cd terraform
@@ -37,7 +37,7 @@ terraform apply -var="docker_image_tag=dev" -var="environment=dev"
 **Windows:**
 ```powershell
 git checkout main
-.\build-and-push.ps1 -GitBranch main
+.\scripts\build-and-push.ps1 -GitBranch main
 cd terraform
 terraform apply -var="docker_image_tag=main" -var="environment=prod"
 ```
@@ -45,7 +45,7 @@ terraform apply -var="docker_image_tag=main" -var="environment=prod"
 **Linux/Mac:**
 ```bash
 git checkout main
-./build-and-push.sh us-east-1 "" main
+./scripts/build-and-push.sh us-east-1 "" main
 cd terraform
 terraform apply -var="docker_image_tag=main" -var="environment=prod"
 ```
@@ -66,7 +66,7 @@ When you run `build-and-push`, it creates **4 Docker image tags**:
 ### Example:
 ```bash
 # On dev branch with commit a1b2c3d
-.\build-and-push.ps1 -GitBranch dev
+.\scripts\build-and-push.ps1 -GitBranch dev
 
 # Creates:
 # - your-account.dkr.ecr.us-east-1.amazonaws.com/py-auto-ui-app:latest
@@ -122,7 +122,7 @@ git commit -m "Add new feature"
 git push origin dev
 
 # 2. Build and push dev image
-.\build-and-push.ps1 -GitBranch dev
+.\scripts\build-and-push.ps1 -GitBranch dev
 
 # 3. Deploy to dev environment
 cd terraform
@@ -138,7 +138,7 @@ git merge dev
 git push origin main
 
 # 2. Build and push production image
-.\build-and-push.ps1 -GitBranch main
+.\scripts\build-and-push.ps1 -GitBranch main
 
 # 3. Deploy to production
 cd terraform
@@ -170,14 +170,14 @@ git checkout -b hotfix/critical-bug main
 git commit -am "Fix critical bug"
 
 # 3. Build and test
-.\build-and-push.ps1 -GitBranch hotfix/critical-bug
+.\scripts\build-and-push.ps1 -GitBranch hotfix/critical-bug
 terraform apply -var="docker_image_tag=hotfix-critical-bug"
 
 # 4. Merge to main and redeploy
 git checkout main
 git merge hotfix/critical-bug
 git push origin main
-.\build-and-push.ps1 -GitBranch main
+.\scripts\build-and-push.ps1 -GitBranch main
 terraform apply -var="docker_image_tag=main"
 ```
 
@@ -254,7 +254,7 @@ git tag -a v1.0.0 -m "Release version 1.0.0"
 git push origin v1.0.0
 
 # Build with tag
-.\build-and-push.ps1
+.\scripts\build-and-push.ps1
 # Creates image with tag: v1.0.0
 ```
 
@@ -305,7 +305,7 @@ jobs:
           aws-region: us-east-1
 
       - name: Build and push
-        run: ./build-and-push.sh us-east-1 "" dev
+        run: ./scripts/build-and-push.sh us-east-1 "" dev
 
       - name: Deploy to ECS
         run: |
@@ -385,10 +385,10 @@ terraform apply -var="docker_image_tag=dev" -replace="aws_ecs_task_definition.ap
 
 ```bash
 # Build from current branch
-.\build-and-push.ps1
+.\scripts\build-and-push.ps1
 
 # Build from specific branch
-.\build-and-push.ps1 -GitBranch dev
+.\scripts\build-and-push.ps1 -GitBranch dev
 
 # Deploy with branch tag
 terraform apply -var="docker_image_tag=dev"

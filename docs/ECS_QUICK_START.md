@@ -22,13 +22,13 @@ terraform apply -auto-approve
 
 **Windows (PowerShell):**
 ```powershell
-.\build-and-push.ps1
+.\scripts\build-and-push.ps1
 ```
 
 **Linux/Mac:**
 ```bash
-chmod +x build-and-push.sh
-./build-and-push.sh
+chmod +x scripts/build-and-push.sh
+./scripts/build-and-push.sh
 ```
 
 ### 3. Access Your Application (1 minute)
@@ -66,7 +66,7 @@ When you change code:
 
 ```bash
 # 1. Push image
-.\build-and-push.ps1
+.\scripts\build-and-push.ps1
 
 # 2. Deploy new version
 aws ecs update-service --cluster py-auto-ui-cluster --service py-auto-ui-service --force-new-deployment --region us-east-1

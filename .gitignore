@@ -1,6 +1,10 @@
-# Environment variables
+# Environment variables and keys
 .env
 *.pem
+*.key
+*.ppk
+*key-pair*
+create-key-pair.sh
 
 # Terraform
 terraform/.terraform/
