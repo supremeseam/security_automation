@@ -359,12 +359,12 @@ resource "aws_ecs_service" "app" {
 }
 
 # Update DB security group to allow ECS tasks
-resource "aws_security_group_rule" "db_from_ecs" {
-  type                     = "ingress"
-  from_port                = 3306
-  to_port                  = 3306
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.db_sg.id
-  source_security_group_id = aws_security_group.ecs_tasks.id
-  description              = "Allow MySQL from ECS tasks"
-}
+#resource "aws_security_group_rule" "db_from_ecs" {
+#  type                     = "ingress"
+#  from_port                = 3306
+#  to_port                  = 3306
+#  protocol                 = "tcp"
+#  security_group_id        = aws_security_group.db_sg.id
+#  source_security_group_id = aws_security_group.ecs_tasks.id
+#  description              = "Allow MySQL from ECS tasks"
+#}
