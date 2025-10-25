@@ -9,6 +9,7 @@ from pathlib import Path
 from datetime import datetime
 from dotenv import load_dotenv
 from task_runner import get_task_runner
+from cognito_auth import CognitoAuth
 
 load_dotenv()
 
@@ -114,29 +115,78 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('index'))
 
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
+    redirect_uri = url_for('callback', _external=True)
+    login_url = cognito.get_login_url(redirect_uri)
+    return redirect(login_url)
 
-        if not username or not password:
-            flash('Username and password required', 'error')
-            return render_template('login.html')
 
-        user = verify_user(username, password)
-        if user:
-            login_user(user)
-            return redirect(request.args.get('next') or url_for('index'))
+    # if request.method == 'POST':
+    #     username = request.form.get('username')
+    #     password = request.form.get('password')
 
-        flash('Invalid credentials', 'error')
+    #     if not username or not password:
+    #         flash('Username and password required', 'error')
+    #         return render_template('login.html')
 
-    return render_template('login.html')
+    #     user = verify_user(username, password)
+    #     if user:
+    #         login_user(user)
+    #         return redirect(request.args.get('next') or url_for('index'))
+
+    #     flash('Invalid credentials', 'error')
+
+    # return render_template('login.html')
+
+@app.route('/callback')
+def callback():
+    """Handle callback from Cognito after login"""
+    code = request.args.get('code')
+    
+    if not code:
+        flash('Login failed', 'error')
+        return redirect(url_for('login'))
+    
+    try:
+        # Exchange code for tokens
+        redirect_uri = url_for('callback', _external=True)
+        tokens = cognito.exchange_code_for_tokens(code, redirect_uri)
+        
+        # Verify the ID token
+        user_info = cognito.verify_token(tokens['id_token'])
+        
+        # Create or get user from your database
+        user = get_or_create_user_from_cognito(user_info)
+        
+        # Log them in with Flask-Login
+        login_user(user)
+        
+        # Store tokens in session (for API calls)
+        session['access_token'] = tokens['access_token']
+        session['id_token'] = tokens['id_token']
+        
+        return redirect(url_for('index'))
+        
+    except Exception as e:
+        print(f"Login error: {e}")
+        flash('Login failed', 'error')
+        return redirect(url_for('login'))
 
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
-    flash('Logged out', 'success')
-    return redirect(url_for('login'))
+    
+    # Clear tokens from session
+    session.pop('access_token', None)
+    session.pop('id_token', None)
+    
+    # Redirect to Cognito logout
+    domain = "your-cognito-domain"
+    logout_uri = url_for('login', _external=True)
+    cognito_logout_url = f"https://{domain}.auth.{self.region}.amazoncognito.com/logout?" \
+                        f"client_id={cognito.client_id}&logout_uri={logout_uri}"
+    
+    return redirect(cognito_logout_url
 
 @app.route('/')
 @login_required

@@ -6,10 +6,18 @@
     "build": "tsc",
     "watch": "tsc --watch"
   },
-  "keywords": ["automation", "python", "web", "typescript"],
+  "keywords": [
+    "automation",
+    "python",
+    "web",
+    "typescript"
+  ],
   "author": "",
   "license": "MIT",
   "devDependencies": {
     "typescript": "^5.3.0"
+  },
+  "dependencies": {
+    "amplify": "^0.0.11"
   }
 }

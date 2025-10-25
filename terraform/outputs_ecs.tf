@@ -30,3 +30,29 @@ output "ecs_service_name" {
 #   description = "CloudWatch log group for ECS tasks"
 #   value       = "/ecs/py-auto-ui"
 # }
+
+# Cognito Outputs
+output "cognito_user_pool_id" {
+  description = "The ID of the Cognito User Pool"
+  value       = aws_cognito_user_pool.user_pool.id
+}
+
+output "cognito_user_pool_client_id" {
+  description = "The ID of the Cognito User Pool Client"
+  value       = aws_cognito_user_pool_client.user_pool_client.id
+}
+
+output "cognito_user_pool_endpoint" {
+  description = "The endpoint of the Cognito User Pool"
+  value       = aws_cognito_user_pool.user_pool.endpoint
+}
+
+output "cognito_user_pool_domain" {
+  description = "The Cognito User Pool Domain"
+  value       = aws_cognito_user_pool_domain.user_pool_domain.domain
+}
+
+output "cognito_hosted_ui_url" {
+  description = "The URL for Cognito Hosted UI"
+  value       = "https://${aws_cognito_user_pool_domain.user_pool_domain.domain}.auth.${var.aws_region}.amazoncognito.com"
+}

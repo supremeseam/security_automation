@@ -166,6 +166,18 @@ resource "aws_ecs_task_definition" "app" {
       {
         name  = "USE_ECS_TASKS"
         value = "true"
+      },
+      {
+        name  = "COGNITO_USER_POOL_ID"
+        value = aws_cognito_user_pool.user_pool.id
+      },
+      {
+        name  = "COGNITO_USER_POOL_CLIENT_ID"
+        value = aws_cognito_user_pool_client.user_pool_client.id
+      },
+      {
+        name  = "COGNITO_REGION"
+        value = var.aws_region
       }
     ]
 
@@ -238,7 +250,7 @@ resource "aws_security_group" "ecs_tasks" {
 # Application Load Balancer
 resource "aws_security_group" "alb" {
   name        = "${var.project_name}-alb-sg"
-  description = "Allow HTTP traffic to ALB"
+  description = "Allow HTTP and HTTPS traffic to ALB"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -246,6 +258,15 @@ resource "aws_security_group" "alb" {
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP traffic"
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTPS traffic"
   }
 
   egress {
