@@ -9,14 +9,11 @@ dnf update -y
 dnf install -y git python3-pip nodejs mariadb105 unzip jq
 
 # Install pip for python3
-# On AL2023, python3-pip is sufficient and get-pip.py is not needed.
 
 # Install AWS CLI v2 (needed for secrets manager)
 # AL2023 comes with AWS CLI v2, so we just ensure it's up-to-date.
-echo "AWS CLI is pre-installed. Skipping manual installation."
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-unzip awscliv2.zip
-./aws/install
+echo "AWS CLI is pre-installed on AL2023. Ensuring it is up to date."
+dnf install -y aws-cli
 
 # Define app directory
 APP_DIR="/opt/automation-ui"
@@ -88,6 +85,13 @@ sudo -u ec2-user pip3 show gunicorn
 echo "Installing Node.js dependencies..."
 sudo -u ec2-user npm install
 sudo -u ec2-user npm run build
+
+# Clean up package caches and temporary files to free up space
+echo "Cleaning up package caches..."
+dnf clean all
+sudo -u ec2-user npm cache clean --force
+sudo -u ec2-user rm -rf /home/ec2-user/.cache/pip
+rm -rf /var/cache/yum/*
 
 # Wait for DB to be ready and run setup script
 echo "Waiting for database to become available..."

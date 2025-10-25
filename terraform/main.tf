@@ -234,6 +234,10 @@ resource "aws_instance" "app_server" {
     app_dir    = "/opt/automation-ui"
   })
 
+  root_block_device {
+    volume_size = var.ec2_root_volume_size
+  }
+
   depends_on = [
     aws_secretsmanager_secret_version.app_secrets_version,
     aws_db_instance.automation_db

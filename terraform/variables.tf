@@ -40,6 +40,12 @@ variable "instance_type" {
   default     = "t2.micro"
 }
 
+variable "ec2_root_volume_size" {
+  description = "The size of the root EBS volume for the EC2 instance in GiB."
+  type        = number
+  default     = 20
+}
+
 variable "db_instance_class" {
   description = "RDS instance class for the database."
   type        = string
@@ -61,5 +67,5 @@ variable "db_username" {
 variable "git_repo_url" {
   description = "The URL of the Git repository for the application."
   type        = string
-  default     = "https://github.com/your-username/your-repo-name.git" # <-- IMPORTANT: CHANGE THIS
+  default     = "https://github.com/supremeseam/security_automation.git" 
 }
