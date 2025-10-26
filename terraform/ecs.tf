@@ -4,6 +4,7 @@
 resource "aws_ecr_repository" "automation_ui" {
   name                 = "${var.project_name}-app"
   image_tag_mutability = "MUTABLE"
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -94,6 +95,32 @@ resource "aws_iam_role_policy" "ecs_secrets_policy" {
   })
 }
 
+data "aws_caller_identity" "current" {}
+
+resource "aws_iam_role_policy" "ecs_logs_policy" {
+  name = "${var.project_name}-ecs-logs-policy"
+  role = aws_iam_role.ecs_task_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action   = ["logs:CreateLogGroup"]
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}"
+      },
+      {
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Effect   = "Allow"
+        Resource = "arn:aws:logs:${var.aws_region}:${data.aws_caller_identity.current.account_id}:log-group:/ecs/${var.project_name}:*"
+      }
+    ]
+  })
+}
+
 # ECS Task Role (for the application itself)
 resource "aws_iam_role" "ecs_task_role" {
   name = "${var.project_name}-ecs-task-role"
@@ -148,6 +175,18 @@ resource "aws_ecs_task_definition" "app" {
         value = var.aws_region
       },
       {
+        name  = "COGNITO_DOMAIN"
+        value = aws_cognito_user_pool_domain.main.domain
+      },
+      {
+        name  = "COGNITO_USER_POOL_ID"
+        value = aws_cognito_user_pool.main.id
+      },
+      {
+        name  = "COGNITO_APP_CLIENT_ID"
+        value = aws_cognito_user_pool_client.main.id
+      },
+      {
         name  = "ECS_CLUSTER_NAME"
         value = aws_ecs_cluster.main.name
       },
@@ -169,42 +208,39 @@ resource "aws_ecs_task_definition" "app" {
       }
     ]
 
-    secrets = [
-      {
-        name      = "DB_USER"
-        valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:db_username::"
-      },
-      {
-        name      = "DB_PASSWORD"
-        valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:db_password::"
-      },
-      {
-        name      = "SECRET_KEY"
-        valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:secret_key::"
-      }
-    ]
+        secrets = [
+          {
+            name      = "DB_USER"
+            valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:db_username::"
+          },
+          {
+            name      = "DB_PASSWORD"
+            valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:db_password::"
+          },
+          {
+            name      = "SECRET_KEY"
+            valueFrom = "${aws_secretsmanager_secret.app_secrets.arn}:secret_key::"
+          }
+        ]
+    
+        logConfiguration = {
+          logDriver = "awslogs"
+          options = {
+            "awslogs-group"         = "/ecs/${var.project_name}"
+            "awslogs-region"        = var.aws_region
+            "awslogs-stream-prefix" = "web"
+            "awslogs-create-group"  = "true"
+          }
+        }
 
-    # Logging temporarily disabled due to IAM restrictions
-    # You can still view logs in ECS console or add this back later
-    # logConfiguration = {
-    #   logDriver = "awslogs"
-    #   options = {
-    #     "awslogs-group"         = local.log_group_name
-    #     "awslogs-region"        = var.aws_region
-    #     "awslogs-stream-prefix" = "web"
-    #     "awslogs-create-group"  = "true"
-    #   }
-    # }
-
-    healthCheck = {
-      command     = ["CMD-SHELL", "curl -f http://localhost:5000/ || exit 1"]
-      interval    = 30
-      timeout     = 5
-      retries     = 3
-      startPeriod = 60
-    }
-  }])
-
+        healthCheck = {
+          command     = ["CMD-SHELL", "curl -f http://localhost:5000/health || exit 1"]
+          interval    = 30
+          timeout     = 5
+          retries     = 3
+          startPeriod = 300
+        }
+      }])
   tags = {
     Name = "${var.project_name}-task-definition"
   }
@@ -217,10 +253,10 @@ resource "aws_security_group" "ecs_tasks" {
   vpc_id      = aws_vpc.main.id
 
   ingress {
-    from_port       = 5000
-    to_port         = 5000
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb.id]
+    from_port   = 5000
+    to_port     = 5000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -235,98 +271,10 @@ resource "aws_security_group" "ecs_tasks" {
   }
 }
 
-# Application Load Balancer
-resource "aws_security_group" "alb" {
-  name        = "${var.project_name}-alb-sg"
-  description = "Allow HTTP traffic to ALB"
-  vpc_id      = aws_vpc.main.id
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${var.project_name}-alb-sg"
-  }
-}
-
-resource "aws_lb" "main" {
-  name               = "${var.project_name}-alb"
-  internal           = false
-  load_balancer_type = "application"
-  security_groups    = [aws_security_group.alb.id]
-  subnets            = [aws_subnet.public.id, aws_subnet.public_b.id]
-
-  enable_deletion_protection = false
-
-  tags = {
-    Name = "${var.project_name}-alb"
-  }
-}
-
-resource "aws_lb_target_group" "app" {
-  name        = "${var.project_name}-tg"
-  port        = 5000
-  protocol    = "HTTP"
-  vpc_id      = aws_vpc.main.id
-  target_type = "ip"
-
-  health_check {
-    enabled             = true
-    healthy_threshold   = 2
-    interval            = 30
-    matcher             = "200"
-    path                = "/health"
-    port                = "traffic-port"
-    protocol            = "HTTP"
-    timeout             = 5
-    unhealthy_threshold = 3
-  }
-
-  deregistration_delay = 30
-
-  tags = {
-    Name = "${var.project_name}-tg"
-  }
-}
-
-resource "aws_lb_listener" "app" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "80"
-  protocol          = "HTTP"
-
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.app.arn
-  }
-}
 
 # Create second public subnet for ALB (requires 2 AZs)
-resource "aws_subnet" "public_b" {
-  vpc_id                  = aws_vpc.main.id
-  cidr_block              = "10.0.4.0/24"  # Changed from 10.0.3.0/24 to avoid conflict
-  map_public_ip_on_launch = true
-  availability_zone       = data.aws_availability_zones.available.names[1]
 
-  tags = {
-    Name = "${var.project_name}-public-subnet-b"
-  }
-}
-
-resource "aws_route_table_association" "public_b" {
-  subnet_id      = aws_subnet.public_b.id
-  route_table_id = aws_route_table.public.id
-}
 
 # ECS Service
 resource "aws_ecs_service" "app" {
@@ -335,6 +283,7 @@ resource "aws_ecs_service" "app" {
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
   launch_type     = "FARGATE"
+  enable_execute_command = true
 
   network_configuration {
     subnets          = [aws_subnet.public.id, aws_subnet.public_b.id]
@@ -342,16 +291,7 @@ resource "aws_ecs_service" "app" {
     assign_public_ip = true
   }
 
-  load_balancer {
-    target_group_arn = aws_lb_target_group.app.arn
-    container_name   = "web"
-    container_port   = 5000
-  }
-
-  depends_on = [
-    aws_lb_listener.app,
-    aws_iam_role_policy_attachment.ecs_task_execution_role_policy
-  ]
+  depends_on = [aws_iam_role_policy.ecs_logs_policy]
 
   tags = {
     Name = "${var.project_name}-service"

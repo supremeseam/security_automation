@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cognito Callback</title>
+</head>
+<body>
+    <h1>Processing login...</h1>
+    <script>
+        // This script will run on the callback page
+        // It extracts the tokens from the URL and stores them in localStorage
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const idToken = params.get('id_token');
+
+        if (idToken) {
+            localStorage.setItem('id_token', idToken);
+            localStorage.setItem('access_token', accessToken);
+            window.location.href = '/'; // Redirect to the main page
+        } else {
+            // Handle the case where tokens are not in the hash
+            // This can happen if the user denies the login
+            const urlParams = new URLSearchParams(window.location.search);
+            const error = urlParams.get('error');
+            if (error) {
+                document.body.innerHTML = `<h1>Error: ${error}</h1>`;
+            } else {
+                 // If no tokens, try to get them from the body (for code grant flow)
+                const tokens = {{ tokens | tojson }};
+                if (tokens && tokens.id_token) {
+                    localStorage.setItem('id_token', tokens.id_token);
+                    localStorage.setItem('access_token', tokens.access_token);
+                    window.location.href = '/'; // Redirect to the main page
+                } else {
+                    document.body.innerHTML = '<h1>Error: Could not retrieve tokens</h1>';
+                }
+            }
+        }
+    </script>
+</body>
+</html>

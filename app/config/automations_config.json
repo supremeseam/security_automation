@@ -21,7 +21,8 @@
           "options": ["extension", "date", "size"],
           "default": "extension"
         }
-      ]
+      ],
+      "authorized_groups": ["user"]
     },
     {
       "id": "email_sender",
@@ -50,7 +51,8 @@
           "required": true,
           "placeholder": "Your message here..."
         }
-      ]
+      ],
+      "authorized_groups": ["user"]
     },
     {
       "id": "data_backup",
@@ -79,7 +81,8 @@
           "required": false,
           "default": true
         }
-      ]
+      ],
+      "authorized_groups": ["user"]
     },
     {
       "id": "user_offboarding",
@@ -100,7 +103,8 @@
           "required": false,
           "default": true
         }
-      ]
+      ],
+      "authorized_groups": ["admin"]
     }
   ]
 }

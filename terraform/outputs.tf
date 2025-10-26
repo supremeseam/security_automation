@@ -1,14 +1,14 @@
-output "application_url" {
-  description = "The URL to access the Python Automation UI."
-  value       = "http://${aws_instance.app_server.public_ip}:5000"
+output "cognito_user_pool_id" {
+  description = "The ID of the Cognito User Pool"
+  value       = aws_cognito_user_pool.main.id
 }
 
-output "ssh_command" {
-  description = "Command to SSH into the EC2 instance."
-  value       = "ssh -i ${local_file.private_key_pem.filename} ec2-user@${aws_instance.app_server.public_ip}"
+output "cognito_user_pool_client_id" {
+  description = "The ID of the Cognito User Pool Client"
+  value       = aws_cognito_user_pool_client.main.id
 }
 
-output "private_key_path" {
-  description = "Path to the generated private key file."
-  value       = local_file.private_key_pem.filename
+output "cognito_user_pool_domain" {
+  description = "The domain of the Cognito User Pool"
+  value       = aws_cognito_user_pool_domain.main.domain
 }
