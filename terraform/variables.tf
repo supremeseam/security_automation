@@ -43,7 +43,7 @@ variable "instance_type" {
 variable "ec2_root_volume_size" {
   description = "The size of the root EBS volume for the EC2 instance in GiB."
   type        = number
-  default     = 20
+  default     = 30
 }
 
 variable "db_instance_class" {
@@ -67,5 +67,17 @@ variable "db_username" {
 variable "git_repo_url" {
   description = "The URL of the Git repository for the application."
   type        = string
-  default     = "https://github.com/supremeseam/security_automation.git" 
+  default     = "https://github.com/supremeseam/security_automation.git"
+}
+
+variable "domain_name" {
+  description = "The domain name for the application (e.g., automation.anchortechconsultants.com)"
+  type        = string
+  default     = "automation.anchortechconsultants.com"
+}
+
+variable "ssl_email" {
+  description = "Email address for Let's Encrypt SSL certificate notifications"
+  type        = string
+  default     = ""
 }

@@ -6,7 +6,7 @@ exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
 # Update and install dependencies
 echo "Installing dependencies on Amazon Linux 2023..."
 dnf update -y
-dnf install -y git python3-pip nodejs mariadb105 unzip jq
+dnf install -y git python3-pip nodejs mariadb105 unzip jq nginx
 
 # Install pip for python3
 
@@ -15,8 +15,13 @@ dnf install -y git python3-pip nodejs mariadb105 unzip jq
 echo "AWS CLI is pre-installed on AL2023. Ensuring it is up to date."
 dnf install -y aws-cli
 
+# Install Certbot for Let's Encrypt
+echo "Installing Certbot..."
+python3 -m pip install certbot certbot-nginx
+
 # Define app directory
 APP_DIR="/opt/automation-ui"
+DOMAIN_NAME="${domain_name}"
 
 # Get secrets from AWS Secrets Manager
 SECRET_ARN="${secret_arn}"
@@ -115,7 +120,7 @@ EnvironmentFile=$${APP_DIR}/app/.env
 WorkingDirectory=$${APP_DIR}/app
 Environment="PATH=/home/ec2-user/.local/bin:/usr/local/bin:/usr/bin:/bin"
 Environment="PYTHONPATH=/home/ec2-user/.local/lib/python3.9/site-packages"
-ExecStart=/usr/bin/python3 -m gunicorn --workers 3 --bind 0.0.0.0:5000 --timeout 120 --access-logfile - --error-logfile - app:app
+ExecStart=/usr/bin/python3 -m gunicorn --workers 3 --bind 127.0.0.1:5000 --timeout 120 --access-logfile - --error-logfile - app:app
 Restart=always
 RestartSec=10
 
@@ -147,4 +152,149 @@ else
     exit 1
 fi
 
-echo "Deployment complete! Access the application at http://$(curl -s http://169.254.169.254/latest/meta-data/public-ipv4):5000"
+echo "Flask application is running on localhost:5000"
+
+# Configure Nginx
+echo "Configuring Nginx..."
+
+# Create directory for Let's Encrypt challenges
+mkdir -p /var/www/certbot
+
+# Create initial Nginx configuration (HTTP only for Let's Encrypt verification)
+cat > /etc/nginx/conf.d/automation-ui.conf << 'NGINXCONF'
+server {
+    listen 80;
+    server_name ${domain_name};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+NGINXCONF
+
+# Replace placeholder with actual domain name
+sed -i "s/\$${domain_name}/$DOMAIN_NAME/g" /etc/nginx/conf.d/automation-ui.conf
+
+# Test Nginx configuration
+nginx -t
+
+# Start and enable Nginx
+systemctl enable nginx
+systemctl start nginx
+
+# Wait for Nginx to be ready
+sleep 5
+
+# Obtain SSL certificate with Let's Encrypt
+echo "Obtaining SSL certificate from Let's Encrypt..."
+echo "Domain: $DOMAIN_NAME"
+
+# Run Certbot
+certbot certonly --nginx \
+    --non-interactive \
+    --agree-tos \
+    --email ${ssl_email} \
+    --domains $DOMAIN_NAME \
+    --keep-until-expiring
+
+if [ $? -eq 0 ]; then
+    echo "SSL certificate obtained successfully!"
+
+    # Update Nginx configuration to use HTTPS
+    cat > /etc/nginx/conf.d/automation-ui.conf << 'NGINXHTTPS'
+# Redirect HTTP to HTTPS
+server {
+    listen 80;
+    server_name ${domain_name};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+# HTTPS server
+server {
+    listen 443 ssl http2;
+    server_name ${domain_name};
+
+    ssl_certificate /etc/letsencrypt/live/${domain_name}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${domain_name}/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    access_log /var/log/nginx/automation-ui-access.log;
+    error_log /var/log/nginx/automation-ui-error.log;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    client_max_body_size 10M;
+}
+NGINXHTTPS
+
+    # Replace placeholder with actual domain name
+    sed -i "s/\$${domain_name}/$DOMAIN_NAME/g" /etc/nginx/conf.d/automation-ui.conf
+
+    # Reload Nginx with new HTTPS configuration
+    nginx -t && systemctl reload nginx
+
+    echo "HTTPS configuration applied successfully!"
+else
+    echo "WARNING: SSL certificate generation failed. Nginx is running with HTTP only."
+    echo "Make sure DNS is pointing to this server before SSL will work."
+    echo "You can manually run: certbot certonly --nginx -d $DOMAIN_NAME"
+fi
+
+# Set up automatic certificate renewal
+echo "Setting up automatic SSL certificate renewal..."
+(crontab -l 2>/dev/null; echo "0 0,12 * * * /usr/local/bin/certbot renew --quiet --post-hook 'systemctl reload nginx'") | crontab -
+
+echo "============================================"
+echo "Deployment complete!"
+echo "============================================"
+echo "Application URL: https://$DOMAIN_NAME"
+echo "HTTP URL: http://$DOMAIN_NAME"
+echo ""
+echo "IMPORTANT: Make sure to point your DNS A record to:"
+echo "IP Address: $(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+echo ""
+echo "DNS Configuration:"
+echo "  Type: A"
+echo "  Name: automation (or subdomain prefix)"
+echo "  Value: $(curl -s http://169.254.169.254/latest/meta-data/public-ipv4)"
+echo "  TTL: 300"
+echo "============================================"

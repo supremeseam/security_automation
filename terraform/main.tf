@@ -108,7 +108,7 @@ resource "aws_route_table_association" "public" {
 
 resource "aws_security_group" "app_sg" {
   name        = "${var.project_name}-app-sg"
-  description = "Allow HTTP and SSH traffic"
+  description = "Allow HTTP, HTTPS, and SSH traffic"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -119,8 +119,15 @@ resource "aws_security_group" "app_sg" {
   }
 
   ingress {
-    from_port   = 5000 # Flask app port
-    to_port     = 5000
+    from_port   = 80 # HTTP
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443 # HTTPS
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -229,9 +236,11 @@ resource "aws_instance" "app_server" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name               = aws_key_pair.generated_key.key_name
   user_data = templatefile("${path.module}/user_data.sh", {
-    secret_arn = aws_secretsmanager_secret.app_secrets.arn
-    aws_region = var.aws_region
-    app_dir    = "/opt/automation-ui"
+    secret_arn  = aws_secretsmanager_secret.app_secrets.arn
+    aws_region  = var.aws_region
+    app_dir     = "/opt/automation-ui"
+    domain_name = var.domain_name
+    ssl_email   = var.ssl_email != "" ? var.ssl_email : "admin@${var.domain_name}"
   })
 
   root_block_device {
