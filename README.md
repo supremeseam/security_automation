@@ -66,19 +66,32 @@ security_automation/
    terraform apply
    ```
 
-4. **Access your application**
-   - The EC2 instance public IP will be output after deployment
-   - Application runs on port 5000
+4. **Configure DNS for your domain**
+   ```bash
+   # Get the EC2 public IP from Terraform output
+   # Configure DNS A record: automation.anchortechconsultants.com -> EC2_IP
+   ```
+
+5. **Set up SSL certificate** (if not automatically configured)
+   - See [SSL Setup Guide](docs/SSL_SETUP.md) for detailed instructions
+   - Quick fix commands included in the documentation
+
+6. **Access your application**
+   - HTTPS URL: https://automation.anchortechconsultants.com
+   - HTTP redirects to HTTPS automatically
    - SSH access available using the generated PEM key
 
 ## Infrastructure Components
 
 - **VPC**: Isolated network with public and private subnets
-- **EC2 Instance**: Amazon Linux 2023 running Flask application
+- **EC2 Instance**: Amazon Linux 2023 running Flask application behind Nginx
+- **Nginx**: Reverse proxy with SSL/TLS termination
+- **SSL/TLS**: Let's Encrypt certificates with automatic renewal
+- **AWS Cognito**: OAuth2 authentication with hosted UI (optional)
 - **RDS MySQL**: Managed database in private subnet
 - **Secrets Manager**: Secure storage for credentials
 - **IAM Roles**: Least-privilege access for EC2 instance
-- **Security Groups**: Network access controls
+- **Security Groups**: Network access controls (HTTP, HTTPS, SSH)
 
 ## Application Features
 
@@ -91,9 +104,12 @@ security_automation/
 
 ## Security Notes
 
-- Database is in private subnet (not publicly accessible)
-- Credentials stored in AWS Secrets Manager
-- Security groups restrict access appropriately
+- **SSL/TLS**: All traffic encrypted with Let's Encrypt certificates
+- **HSTS**: HTTP Strict Transport Security enabled
+- **Database**: In private subnet (not publicly accessible)
+- **Credentials**: Stored in AWS Secrets Manager
+- **Reverse Proxy**: Flask app only accessible via Nginx (localhost)
+- **Security Groups**: HTTP (80), HTTPS (443), and SSH (22) configured
 - **WARNING**: SSH (port 22) is currently open to 0.0.0.0/0 - restrict this in production
 
 ## Maintenance
@@ -117,9 +133,31 @@ sudo journalctl -u automation-ui -f
 sudo cat /var/log/user-data.log
 ```
 
+## Authentication
+
+The application supports two authentication methods:
+
+### Option 1: AWS Cognito (Recommended)
+- OAuth2-based authentication
+- Hosted UI for login/signup
+- No password management required
+- Built-in MFA and security features
+- See [Cognito Migration Guide](docs/COGNITO_MIGRATION.md)
+
+### Option 2: Database Authentication (Legacy)
+- Traditional username/password
+- Stored in MySQL database
+- Requires manual user management
+
+To switch between methods, see the migration guide.
+
 ## Documentation
 
 See [docs/](docs/) directory for detailed documentation:
+- [Cognito Setup Commands](docs/COGNITO_SETUP_COMMANDS.md) - **Quick copy-paste commands** ⚡
+- [Cognito Quick Start](docs/COGNITO_QUICK_START.md) - Fast setup guide
+- [Cognito Migration Guide](docs/COGNITO_MIGRATION.md) - Complete AWS Cognito guide
+- [SSL Setup Guide](docs/SSL_SETUP.md) - SSL certificate and domain configuration
 - [MySQL Setup Guide](docs/SETUP_MYSQL.md) - Database configuration
 
 ## License
