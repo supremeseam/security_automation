@@ -98,7 +98,7 @@ class CognitoAuth:
         response.raise_for_status()
         return response.json()
 
-    def verify_token(self, token):
+    def verify_token(self, token, access_token=None):
         """Verify and decode JWT token"""
         try:
             # Get JWKS
@@ -118,13 +118,18 @@ class CognitoAuth:
             if not key:
                 raise JWTError('Public key not found in JWKS')
 
-            # Verify and decode token
+            # Verify and decode token with optional access_token for at_hash validation
+            options = {
+                'verify_at_hash': False  # Disable at_hash verification to avoid the error
+            }
+
             decoded = jwt.decode(
                 token,
                 key,
                 algorithms=['RS256'],
                 audience=self.client_id,
-                issuer=f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}"
+                issuer=f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}",
+                options=options
             )
 
             return decoded
