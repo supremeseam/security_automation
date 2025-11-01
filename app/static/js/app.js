@@ -228,7 +228,7 @@ class AutomationUI {
             return;
         outputDiv.style.display = 'block';
         outputContent.className = type;
-        outputContent.innerHTML = `<pre>${this.escapeHtml(message)}</pre>`;
+        outputContent.innerText = this.escapeHtml(message);
     }
     showError(message) {
         this.showOutput(message, 'error');
@@ -236,7 +236,7 @@ class AutomationUI {
     escapeHtml(text) {
         const div = document.createElement('div');
         div.textContent = text;
-        return div.innerHTML;
+        return div.innerText;
     }
 }
 // Initialize the app when DOM is ready
