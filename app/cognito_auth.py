@@ -31,9 +31,7 @@ class CognitoAuth:
         self.redirect_uri = f"https://{self.app_domain}/callback"
         self.logout_redirect_uri = f"https://{self.app_domain}"
 
-        # Get JW
-
-KS URL for token verification
+        # Get JWKS URL for token verification
         self.jwks_url = f"https://cognito-idp.{self.region}.amazonaws.com/{self.user_pool_id}/.well-known/jwks.json"
 
         # Cache for JWKS
