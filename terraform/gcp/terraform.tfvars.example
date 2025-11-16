@@ -1,0 +1,35 @@
+# GCP Project Configuration
+gcp_project_id  = "your-gcp-project-id"
+gcp_region      = "us-central1"
+gcp_zone_suffix = "a"
+
+# Project Name (used as prefix for all resources)
+project_name = "py-auto-ui"
+
+# Network Configuration
+public_subnet_cidr  = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+
+# Compute Engine Configuration
+instance_type = "e2-micro" # e2-micro, e2-small, e2-medium, etc.
+vm_image      = "debian-cloud/debian-12"
+vm_disk_size  = 20 # GB
+
+# Cloud SQL Configuration
+db_instance_tier = "db-f1-micro" # db-f1-micro, db-g1-small, db-n1-standard-1, etc.
+db_name          = "automation_ui"
+db_username      = "dbadmin"
+
+# Application Configuration
+git_repo_url = "https://github.com/supremeseam/security_automation.git"
+
+# SSL/HTTPS Configuration (Optional)
+# Set enable_ssl to true and provide domain_name and ssl_email to enable HTTPS
+enable_ssl  = false # Set to true to enable SSL with Let's Encrypt
+domain_name = ""    # e.g., "automation.example.com" - Required if enable_ssl is true
+ssl_email   = ""    # e.g., "admin@example.com" - Required if enable_ssl is true
+
+# Example with SSL enabled:
+# enable_ssl  = true
+# domain_name = "automation.example.com"
+# ssl_email   = "admin@example.com"
